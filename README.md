@@ -1,1 +1,4 @@
-# set-analysis-generator
+# Qlik Expression Generator
+
+Generate Qlik Expressions
+

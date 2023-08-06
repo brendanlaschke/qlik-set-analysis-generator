@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    background-color: rgb(15 23 42);
+    color: rgb(148 163 184);
+}
+
+.background-animate {
+    background-size: 200%;
+    -webkit-animation: AnimateBackgroud 10s ease infinite;
+    -moz-animation: AnimateBackgroud 10s ease infinite;
+    animation: AnimateBackgroud 10s ease infinite;
+  }
+  
+  @keyframes AnimateBackgroud {
+    0% {
+      background-position: 0;
+    }
+  
+    50% {
+      background-position: 100%;
+    }
+  
+     100% {
+      background-position: 0;
+    }
+  }
