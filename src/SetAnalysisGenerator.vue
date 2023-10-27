@@ -245,7 +245,9 @@ onMounted(() => {
             <div class="flex w-full gap-2">
                 <label class="block mb-2 text-sm font-medium text-white w-50 flex-1">Basis</label>
                 <label v-if="['bookmark', '$+bookmark', '$-bookmark', '$*bookmark'].includes(setIdentifier)"
-                    class="block mb-2 text-sm font-medium text-white w-50 flex-1">Bookmark/AltState</label>
+                    class="block mb-2 text-sm font-medium text-white w-50 flex-1">Bookmark</label>
+                <label v-if="['altState', '$+altState', '$-altState', '$*altState'].includes(setIdentifier)"
+                    class="block mb-2 text-sm font-medium text-white w-50 flex-1">Alternative State</label>
             </div>
             <div class="flex w-full gap-2">
                 <ElSelect class="flex-1" filterable @change="onChange" v-model="setIdentifier">
@@ -254,7 +256,7 @@ onMounted(() => {
                         </ElOption>
                     </ElOptionGroup>
                 </ElSelect>
-                <ElInput v-if="['bookmark', '$+bookmark', '$-bookmark', '$*bookmark'].includes(setIdentifier)"
+                <ElInput v-if="['bookmark', '$+bookmark', '$-bookmark', '$*bookmark', 'altState', '$+altState', '$-altState', '$*altState'].includes(setIdentifier)"
                     class="flex-1" v-model="bookmark" @input="onChange"></ElInput>
             </div>
 
@@ -351,8 +353,8 @@ onMounted(() => {
                     <ElInput v-if="mod.SelectionOperator.includes('between')" class="flex-1"
                         v-model="mod.ValuesOrExpression_2" @input="onChange"></ElInput>
                 </div>
-                <label v-if="mod.Action != 'set_remove'"
-                    class="block mb-2 text-sm font-medium text-white flex-1">Indirect Field</label>
+                <label v-if="mod.Action != 'set_remove'" class="block mb-2 text-sm font-medium text-white flex-1">Indirect
+                    Field</label>
                 <ElInput v-if="mod.Action != 'set_remove'" class="flex-1" v-model="mod.IndirectField" @input="onChange">
                 </ElInput>
             </div>
