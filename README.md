@@ -13,4 +13,4 @@ Based on the [Set Analysis Wizard for QlikView](https://github.com/stefanwalther
 
 Provides description on hovering the Set Analysis:
 
-![](./images/setanalysis)
+![](https://raw.githubusercontent.com/brendanlaschke/qlik-set-analysis-generator/main/images/setanalysis.png)
