@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { SetAnalysisModifier, getSetAnalysis } from './getSetAnalysis';
+import { SetAnalysisModifier, SetExprInteractivePart, getSetAnalysisInteractive } from './getSetAnalysis';
 
 //#region 
 const optionsBasis = [{
@@ -193,13 +193,14 @@ function reset() {
     onChange();
 }
 function onChange() {
-    resultSetExpression.value = getSetAnalysis({
+    resultSetInteractive.value = getSetAnalysisInteractive({
         setIdentifier: setIdentifier.value,
         bookmark: bookmark.value,
         aggregationType: aggregationType.value,
         fieldExpression: fieldExpression.value,
         setModifiers: modifiers.value,
     })
+    console.log(resultSetInteractive);
 }
 const copied = ref(false);
 function copyToClipboard(text: string) {
@@ -215,7 +216,7 @@ function addModifier() {
         FieldOperator: '=',
         Field: '',
         OtherField: '',
-        SelectionOperator: '=',
+        SelectionOperator: 'equal_to',
         IndirectField: '',
         ValuesOrExpression_1: '',
         ValuesOrExpression_2: ''
@@ -223,11 +224,28 @@ function addModifier() {
     onChange();
 }
 
-const resultSetExpression = ref('');
+const hoveredBracket = ref();
+
+function hoverBracket(v?: string) {
+    hoveredBracket.value = v;
+}
+function leaveBracket() {
+    hoveredBracket.value = undefined;
+}
+const resultSetInteractive = ref<SetExprInteractivePart[]>();
 
 onMounted(() => {
     onChange()
 })
+
+const tokenDescription: {[key: string]: string} = {
+    'SetIdentifier$': 'Set Identifier: Current Selection',
+    'SetIdentifier1': 'Set Identifier: All Values',
+    'SetIdentifier1-$': 'Set Identifier: All values except Current Selection',
+    'P': 'P: Possible Values',
+    'E': 'E: Excluded Values',
+}   
+
 </script>
 
 <template>
@@ -256,7 +274,8 @@ onMounted(() => {
                         </ElOption>
                     </ElOptionGroup>
                 </ElSelect>
-                <ElInput v-if="['bookmark', '$+bookmark', '$-bookmark', '$*bookmark', 'altState', '$+altState', '$-altState', '$*altState'].includes(setIdentifier)"
+                <ElInput
+                    v-if="['bookmark', '$+bookmark', '$-bookmark', '$*bookmark', 'altState', '$+altState', '$-altState', '$*altState'].includes(setIdentifier)"
                     class="flex-1" v-model="bookmark" @input="onChange"></ElInput>
             </div>
 
@@ -328,7 +347,7 @@ onMounted(() => {
                 <label v-if="mod.Action != 'set_remove'"
                     class="block mb-2 text-md font-medium text-white flex-1">Condition</label>
                 <div v-if="mod.Action != 'set_remove'" class="flex w-full gap-2">
-                    <label class="block mb-2 text-sm font-medium text-white flex-1">Other Field</label>
+                    <label v-if="!['set_modify_by_value','set_modify_by_expression'].includes(mod.Action)" class="block mb-2 text-sm font-medium text-white flex-1">Other Field</label>
                     <label class="block mb-2 text-sm font-medium text-white flex-1">Operator</label>
                     <label
                         v-if="['set_modify_by_expression', 'set_pindirect_exp', 'set_eindirect_exp'].includes(mod.Action)"
@@ -344,7 +363,7 @@ onMounted(() => {
                         class="block mb-2 text-sm font-medium text-white flex-1">Value 2</label>
                 </div>
                 <div v-if="mod.Action != 'set_remove'" class="flex w-full gap-2 mb-3">
-                    <ElInput class="flex-1" v-model="mod.OtherField" @input="onChange"></ElInput>
+                    <ElInput v-if="!['set_modify_by_value','set_modify_by_expression'].includes(mod.Action)" class="flex-1" v-model="mod.OtherField" @input="onChange"></ElInput>
                     <ElSelect class="flex-1" filterable @change="onChange" v-model="mod.SelectionOperator">
                         <ElOption v-for="item in operators" :key="item.value" :label="item.label" :value="item.value">
                         </ElOption>
@@ -353,9 +372,9 @@ onMounted(() => {
                     <ElInput v-if="mod.SelectionOperator.includes('between')" class="flex-1"
                         v-model="mod.ValuesOrExpression_2" @input="onChange"></ElInput>
                 </div>
-                <label v-if="mod.Action != 'set_remove'" class="block mb-2 text-sm font-medium text-white flex-1">Indirect
+                <label v-if="!['set_remove', 'set_modify_by_value','set_modify_by_expression'].includes(mod.Action)" class="block mb-2 text-sm font-medium text-white flex-1">Indirect
                     Field</label>
-                <ElInput v-if="mod.Action != 'set_remove'" class="flex-1" v-model="mod.IndirectField" @input="onChange">
+                <ElInput v-if="!['set_remove', 'set_modify_by_value','set_modify_by_expression'].includes(mod.Action)" class="flex-1" v-model="mod.IndirectField" @input="onChange">
                 </ElInput>
             </div>
         </div>
@@ -366,15 +385,31 @@ onMounted(() => {
         <div>
             <div class="absolute right-0 cursor-pointer">
                 <el-tooltip content="Copy" placement="top" effect="dark">
-                    <svg @click="copyToClipboard(resultSetExpression)" xmlns="http://www.w3.org/2000/svg"
-                        class="hover:scale-110" :class="{ 'animate-pulse text-green-600': copied }" fill="currentColor"
-                        height="1em" viewBox="0 0 448 512">
+                    <svg @click="copyToClipboard(resultSetInteractive?.map(x => x.text).join('') || '')"
+                        xmlns="http://www.w3.org/2000/svg" class="hover:scale-110"
+                        :class="{ 'animate-pulse text-green-600': copied }" fill="currentColor" height="1em"
+                        viewBox="0 0 448 512">
                         <path
                             d="M208 0H332.1c12.7 0 24.9 5.1 33.9 14.1l67.9 67.9c9 9 14.1 21.2 14.1 33.9V336c0 26.5-21.5 48-48 48H208c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zM48 128h80v64H64V448H256V416h64v48c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V176c0-26.5 21.5-48 48-48z" />
                     </svg>
                 </el-tooltip>
             </div>
-            {{ resultSetExpression }}
+            <span v-for="token in resultSetInteractive" @mouseover="hoverBracket(token.bracketId)" class="token"
+                @mouseleave="leaveBracket()" :class="{
+                    'bg-zinc-500': token.bracketId == hoveredBracket && token.bracketId,
+                    'text-cyan-500': token.bracketId?.startsWith('SetMod'),
+                    'text-green-400': token.text == '<' || token.text == '>',
+                    'text-amber-400': token.type == 'SetIdentifier' 
+                }">
+                <el-tooltip :disabled="token.type == 'Bracket'"
+                    :content="tokenDescription[token.type + (token.type == 'SetIdentifier' ? token.text : '')] ?? token.type"
+                    placement="top" effect="dark">
+                    {{ token.text }}
+                </el-tooltip>
+            </span>
+            <div style="font-size: 10px; margin-top: 10px; display: flex; place-content: end;">
+                Tip: Hover the generated expression to view more Information
+            </div>
         </div>
     </div>
 </template>

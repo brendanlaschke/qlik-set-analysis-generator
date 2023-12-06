@@ -6,3 +6,8 @@ body {
     background-color: rgb(15 23 42);
     color: rgb(148 163 184);
 }
+
+.token {
+    padding-left: 1px;
+    padding-right: 1px;
+}

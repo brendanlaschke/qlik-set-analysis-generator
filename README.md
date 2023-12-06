@@ -11,8 +11,6 @@ Based on the [Set Analysis Wizard for QlikView](https://github.com/stefanwalther
 
 
 
+Provides description on hovering the Set Analysis:
 
-## Roadmap:
-
-* Annotated Expression preview
-* Help page for Qlik Set Analysis 
+![](./images/setanalysis)
