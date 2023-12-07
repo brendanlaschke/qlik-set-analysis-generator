@@ -238,13 +238,44 @@ onMounted(() => {
     onChange()
 })
 
-const tokenDescription: {[key: string]: string} = {
-    'SetIdentifier$': 'Set Identifier: Current Selection',
-    'SetIdentifier1': 'Set Identifier: All Values',
-    'SetIdentifier1-$': 'Set Identifier: All values except Current Selection',
-    'P': 'P: Possible Values',
-    'E': 'E: Excluded Values',
-}   
+
+
+function getTokenDescription(token: SetExprInteractivePart): string {
+    if (token.type == 'P') {
+        return 'P: Possible Values';
+    }
+    if (token.type == 'E') {
+        return 'E: Excluded Values';
+    }
+    if (token.type == 'Aggregation') {
+        return 'Aggregation: ' + token.text;
+    }
+
+    if (token.type == 'SetIdentifier') {
+        const type = setIdentifier.value;
+        const typeText = type == 'bookmark' ? 'Bookmark' : 'Alternative State'
+        if (type == 'bookmark' || type == 'altState') {
+            return `Set Identifier: ${typeText} '${bookmark.value}'`
+        }
+        if (type == '$+bookmark' || type == '$+altState') {
+            return `Set Identifier: Current Selection + ${typeText} '${bookmark.value}'`
+        }
+        if (type == '$-bookmark' || type == '$-altState') {
+            return `Set Identifier: Current Selection - ${typeText} '${bookmark.value}'`
+        }
+        if (type == '$*bookmark' || type == '$*altState') {
+            return `Set Identifier: Current Selection intersected ${typeText} '${bookmark.value}'`
+        }
+        const tokenDescription: { [key: string]: string } = {
+            'SetIdentifier$': 'Set Identifier: Current Selection',
+            'SetIdentifier1': 'Set Identifier: All Values',
+            'SetIdentifier1-$': 'Set Identifier: All values except Current Selection',
+        }
+        return tokenDescription[token.type + token.text]
+    }
+    return token.type;
+
+}
 
 </script>
 
@@ -347,7 +378,8 @@ const tokenDescription: {[key: string]: string} = {
                 <label v-if="mod.Action != 'set_remove'"
                     class="block mb-2 text-md font-medium text-white flex-1">Condition</label>
                 <div v-if="mod.Action != 'set_remove'" class="flex w-full gap-2">
-                    <label v-if="!['set_modify_by_value','set_modify_by_expression'].includes(mod.Action)" class="block mb-2 text-sm font-medium text-white flex-1">Other Field</label>
+                    <label v-if="!['set_modify_by_value', 'set_modify_by_expression'].includes(mod.Action)"
+                        class="block mb-2 text-sm font-medium text-white flex-1">Other Field</label>
                     <label class="block mb-2 text-sm font-medium text-white flex-1">Operator</label>
                     <label
                         v-if="['set_modify_by_expression', 'set_pindirect_exp', 'set_eindirect_exp'].includes(mod.Action)"
@@ -363,7 +395,8 @@ const tokenDescription: {[key: string]: string} = {
                         class="block mb-2 text-sm font-medium text-white flex-1">Value 2</label>
                 </div>
                 <div v-if="mod.Action != 'set_remove'" class="flex w-full gap-2 mb-3">
-                    <ElInput v-if="!['set_modify_by_value','set_modify_by_expression'].includes(mod.Action)" class="flex-1" v-model="mod.OtherField" @input="onChange"></ElInput>
+                    <ElInput v-if="!['set_modify_by_value', 'set_modify_by_expression'].includes(mod.Action)" class="flex-1"
+                        v-model="mod.OtherField" @input="onChange"></ElInput>
                     <ElSelect class="flex-1" filterable @change="onChange" v-model="mod.SelectionOperator">
                         <ElOption v-for="item in operators" :key="item.value" :label="item.label" :value="item.value">
                         </ElOption>
@@ -372,9 +405,11 @@ const tokenDescription: {[key: string]: string} = {
                     <ElInput v-if="mod.SelectionOperator.includes('between')" class="flex-1"
                         v-model="mod.ValuesOrExpression_2" @input="onChange"></ElInput>
                 </div>
-                <label v-if="!['set_remove', 'set_modify_by_value','set_modify_by_expression'].includes(mod.Action)" class="block mb-2 text-sm font-medium text-white flex-1">Indirect
+                <label v-if="!['set_remove', 'set_modify_by_value', 'set_modify_by_expression'].includes(mod.Action)"
+                    class="block mb-2 text-sm font-medium text-white flex-1">Indirect
                     Field</label>
-                <ElInput v-if="!['set_remove', 'set_modify_by_value','set_modify_by_expression'].includes(mod.Action)" class="flex-1" v-model="mod.IndirectField" @input="onChange">
+                <ElInput v-if="!['set_remove', 'set_modify_by_value', 'set_modify_by_expression'].includes(mod.Action)"
+                    class="flex-1" v-model="mod.IndirectField" @input="onChange">
                 </ElInput>
             </div>
         </div>
@@ -399,11 +434,10 @@ const tokenDescription: {[key: string]: string} = {
                     'bg-zinc-500': token.bracketId == hoveredBracket && token.bracketId,
                     'text-cyan-500': token.bracketId?.startsWith('SetMod'),
                     'text-green-400': token.text == '<' || token.text == '>',
-                    'text-amber-400': token.type == 'SetIdentifier' 
+                    'text-amber-400': token.type == 'SetIdentifier'
                 }">
-                <el-tooltip :disabled="token.type == 'Bracket'"
-                    :content="tokenDescription[token.type + (token.type == 'SetIdentifier' ? token.text : '')] ?? token.type"
-                    placement="top" effect="dark">
+                <el-tooltip :disabled="token.type == 'Bracket' || token.type == 'ModifierSeperator'"
+                    :content="getTokenDescription(token)" placement="top" effect="dark">
                     {{ token.text }}
                 </el-tooltip>
             </span>
@@ -411,5 +445,4 @@ const tokenDescription: {[key: string]: string} = {
                 Tip: Hover the generated expression to view more Information
             </div>
         </div>
-    </div>
-</template>
+</div></template>
